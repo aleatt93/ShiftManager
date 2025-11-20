@@ -1,4 +1,4 @@
-# Shift Manager v1.0
+# Shift Manager v2.0
 
 Shift Manager is a user-friendly desktop application designed to simplify and automate the process of creating and managing monthly employee shift schedules. It provides a clean graphical interface to handle employee data, generate fair and balanced schedules, and export them to common formats.
 
@@ -42,8 +42,8 @@ pip install openpyxl
 1.  **Clone the repository or download the source code.**
     If you have Git installed, you can use:
     ```bash
-    git clone https://github.com/your-username/shift-manager.git
-    cd shift-manager
+    git clone https://github.com/aleatt93/ShiftManager.git
+    cd ShiftManager
     ```
     Otherwise, download the ZIP file and extract it.
 
@@ -96,6 +96,10 @@ You can manually assign shifts or set employees as "Off Duty" before or after ge
 -   **Python 3** - The core programming language.
 -   **Tkinter / ttk** - Python's standard library for the graphical user interface.
 -   **PyInstaller** (for creating the executable) - A tool to bundle a Python application and all its dependencies into a single package.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Author
 
