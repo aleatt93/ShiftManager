@@ -1,0 +1,28 @@
+{
+    "date": {
+        "year": 2025,
+        "month": 11,
+        "year_range": 5
+    },
+    "files": {
+        "employees_database_file": "data\\employees.json",
+        "shift_storage_database_file": "data\\shift_storage.json"
+    },
+    "shift_settings": {
+        "shift_representation": {
+            "mattina": "M",
+            "mattina_rep": "M+R",
+            "pomeriggio": "P",
+            "weekend_rep": "R",
+            "off_duty": "X"
+        },
+        "n_of_employees": {
+            "mattina_rep": 1,
+            "weekend_rep": 1
+        },
+        "weekend_days": [
+            5,
+            6
+        ]
+    }
+}
