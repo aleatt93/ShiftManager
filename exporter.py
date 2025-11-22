@@ -55,11 +55,15 @@ class Exporter:
                     shift_text = self.SHIFT_CORRISPONDANCE["off_duty"]
                 elif self.schedule_data and current_date in self.schedule_data:
                     daily_shifts = self.schedule_data[current_date]
-                    if employee in daily_shifts["mattina_rep"]:
+                    # Compare by employee ID instead of object identity (temp list has deep copies)
+                    employee_ids_in_mattina_rep = [emp.id for emp in daily_shifts["mattina_rep"]]
+                    if employee.id in employee_ids_in_mattina_rep:
                             shift_text = self.SHIFT_CORRISPONDANCE["mattina_rep"]
                     else:
                         for shift_type, emp_assigned_to_shift in daily_shifts.items():
-                            if employee in emp_assigned_to_shift:
+                            # Compare by ID instead of object identity
+                            employee_ids_in_shift = [emp.id for emp in emp_assigned_to_shift]
+                            if employee.id in employee_ids_in_shift:
                                 shift_text = self.SHIFT_CORRISPONDANCE.get(shift_type, "?")
                                 break
 

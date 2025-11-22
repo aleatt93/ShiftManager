@@ -223,6 +223,8 @@ class ShiftManagerGui(tk.Tk):
                 if date_obj not in employee.days_off:
                     employee.days_off.append(date_obj)
                     self._update_shift_count(employee, "off_duty", 1)
+                # IMPORTANT: Also add to locked_shifts so it persists across regenerations
+                main_gui.locked_shifts[lock_key] = "off_duty"
             elif new_val in shift_map:
                 shift_type = shift_map[new_val]
                 main_gui.locked_shifts[lock_key] = shift_type
@@ -1389,9 +1391,12 @@ class ShiftManagerGui(tk.Tk):
 
         # Creazione istanza Exporter e chiamata del metodo corretto
         try:
+            # Use temp_employees_list if available (after generation), otherwise use main list
+            employees_for_export = self.temp_employees_list if self.temp_employees_list else self.employees_manager.emp_list
+            
             exporter = Exporter(
                 schedule_data=schedule_to_export,
-                employees_list=self.employees_manager.export_employees_list(),
+                employees_list=employees_for_export,
                 year=selected_year_int,
                 month=selected_month_int,
                 config=self.configuration
