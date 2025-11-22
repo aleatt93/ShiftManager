@@ -601,10 +601,10 @@ class ShiftManagerGui(tk.Tk):
             self.grab_set()  # Impedisce all'user di utilizzare la finestra sottostante
 
         def _root_setting(self):
-            self._center_window()
-            self.title("Info")
-            # self.geometry("800x400")
+            self.title("Info - Configurazione")
+            self.geometry("700x550")  # Set size before centering
             self.resizable(False, False)
+            self._center_window()  # Center AFTER setting geometry
 
         def _center_window(self):
             """Centers the Toplevel windows on the screen."""
@@ -620,67 +620,42 @@ class ShiftManagerGui(tk.Tk):
             dialog_window_x = self.winfo_width()
             dialog_window_y = self.winfo_height()
 
-            window_pos_x = int((screen_x / 2) - dialog_window_x)
-            window_pos_y = int(screen_y * 0.25)
+            # Calculate center position
+            window_pos_x = int((screen_x / 2) - (dialog_window_x / 2))
+            window_pos_y = int((screen_y / 2) - (dialog_window_y / 2))
 
-            self.geometry(f"-{window_pos_x}-{window_pos_y}")
+            self.geometry(f"+{window_pos_x}+{window_pos_y}")
 
         def _frame_setting(self):
-            self.frame_info_master = ttk.Frame(self)
+            self.frame_info_master = ttk.Frame(self, padding=20)
             self.frame_info_master.pack(expand=True, fill="both")
-            self.frame_info_master.rowconfigure(2, weight=1)
-            self.frame_info_master.columnconfigure(0, weight=1)
+            self.frame_info_master.columnconfigure(1, weight=1)
 
         def _widget_setting(self):
-            text_header = f"Descrizione parametri in config.json"
-            text_introduction = (
-                "E' possibile modificare alcune informazioni tramite modifica del file config.json. "
-                "Per modificare il file aprirlo con il blocco note.\n"
-            )
-
-            text_year_range = "year_range"
-            text_year_range_description = (
-                "Consente di modificare il range di anni visualizzati nella finestra 'Turni'.\n"
-                )
-
-            text_shift_representation = "shift_representation"
-            text_shift_representation_description = (
-                "Consente di modificare in che modo i turni vengono rappresentati nella tabella.\n"
-            )
-
-            text_n_of_employees = "n_of_employees"
-            text_n_of_employees_description = (
-                "Consente di indicare quanti impiegati assegnare in reperibilità la mattina\n"
-                "ed il fine settimana. Il testo deve essere inserito tra virgolette ('" "').\n"
-            )
-
-            text_weekend_days = "weekend_days"
-            text_weekend_days_description = (
-                "Consente di indicare quali giorni sono da considerare come weekend.\n"
-                "Il numero deve essere sempre seguito da una virgola, ad eccezione "
-                " dell'ultimo numero.\n"
-                "1: LUNEDI\n"
-                "2: MARTEDI\n"
-                "3: MERCOLEDI\n"
-                "4: GIOVEDI\n"
-                "5: VENERDI\n"
-                "6: SABATO\n"
-                "7: DOMENICA."
-            )
-
-            # Custom style setting for header
+            # Custom styles
             style_header = ttk.Style(self)
             style_header.configure(
-                style="Header.TLabel",
-                font=("Helvetica", 12, "bold")
+                style="InfoHeader.TLabel",
+                font=("Segoe UI", 14, "bold")
+            )
+            style_param = ttk.Style(self)
+            style_param.configure(
+                style="InfoParam.TLabel",
+                font=("Consolas", 10, "bold"),
+                foreground="#0066cc"
+            )
+            style_desc = ttk.Style(self)
+            style_desc.configure(
+                style="InfoDesc.TLabel",
+                font=("Segoe UI", 9)
             )
 
+            # Header
             label_heading = ttk.Label(
                 master=self.frame_info_master,
-                text=text_header,
-                style="Header.TLabel",
-                anchor="center",
-                padding=(0, 10)  # Applies 10 pixel of padding (Left-Right, Top-Bottom)
+                text="📝 Configurazione Parametri (config.json)",
+                style="InfoHeader.TLabel",
+                anchor="center"
             )
 
             separator_top = ttk.Separator(
@@ -688,58 +663,97 @@ class ShiftManagerGui(tk.Tk):
                 orient="horizontal"
             )
 
+            # Introduction
+            text_introduction = (
+                "È possibile personalizzare il comportamento dell'applicazione modificando il file config.json.\n"
+                "Per modificare il file, aprirlo con un editor di testo (es. Blocco Note).\n"
+            )
             label_text_introduction = ttk.Label(
                 master=self.frame_info_master,
                 text=text_introduction,
-                anchor="center"
+                style="InfoDesc.TLabel",
+                justify="left",
+                wraplength=650
             )
             
-            label_text_param_1 = ttk.Label(
+            # Parameter 1: year_range
+            label_param_1 = ttk.Label(
                 master=self.frame_info_master,
-                text=text_year_range,
-                anchor="ne"
+                text="year_range",
+                style="InfoParam.TLabel",
+                anchor="w"
             )
-            
-            label_text_param_1_description = ttk.Label(
+            label_param_1_desc = ttk.Label(
                 master=self.frame_info_master,
-                text=text_year_range_description,
-                anchor="nw"
-            )
-
-            label_text_param_2 = ttk.Label(
-                master=self.frame_info_master,
-                text=text_shift_representation,
-                anchor="ne"
+                text="Modifica il range di anni visualizzati nel menu 'Turni'.\nEsempio: \"year_range\": 2",
+                style="InfoDesc.TLabel",
+                justify="left",
+                anchor="w"
             )
 
-            label_text_param_2_description = ttk.Label(
+            # Parameter 2: shift_representation
+            label_param_2 = ttk.Label(
                 master=self.frame_info_master,
-                text=text_shift_representation_description,
-                anchor="nw"
+                text="shift_representation",
+                style="InfoParam.TLabel",
+                anchor="w"
+            )
+            label_param_2_desc = ttk.Label(
+                master=self.frame_info_master,
+                text="Personalizza le abbreviazioni dei turni visualizzate nella tabella.\nEsempio: \"mattina\": \"M\", \"pomeriggio\": \"P\"",
+                style="InfoDesc.TLabel",
+                justify="left",
+                anchor="w"
             )
 
-            label_text_param_3 = ttk.Label(
+            # Parameter 3: n_of_employees
+            label_param_3 = ttk.Label(
                 master=self.frame_info_master,
-                text=text_n_of_employees,
-                anchor="ne"
+                text="n_of_employees",
+                style="InfoParam.TLabel",
+                anchor="w"
+            )
+            label_param_3_desc = ttk.Label(
+                master=self.frame_info_master,
+                text="Specifica quanti impiegati assegnare in reperibilità (mattina e weekend).\nEsempio: \"mattina_rep\": 1, \"weekend_rep\": 1",
+                style="InfoDesc.TLabel",
+                justify="left",
+                anchor="w"
             )
 
-            label_text_param_3_description = ttk.Label(
+            # Parameter 4: weekend_days
+            label_param_4 = ttk.Label(
                 master=self.frame_info_master,
-                text=text_n_of_employees_description,
-                anchor="nw"
+                text="weekend_days",
+                style="InfoParam.TLabel",
+                anchor="w"
+            )
+            label_param_4_desc = ttk.Label(
+                master=self.frame_info_master,
+                text=(
+                    "Definisce quali giorni sono considerati weekend.\n"
+                    "Valori: 0=Lunedì, 1=Martedì, 2=Mercoledì, 3=Giovedì, 4=Venerdì, 5=Sabato, 6=Domenica\n"
+                    "Esempio: \"weekend_days\": [5, 6]  (Sabato e Domenica)"
+                ),
+                style="InfoDesc.TLabel",
+                justify="left",
+                anchor="w",
+                wraplength=500
             )
 
-            label_text_param_4 = ttk.Label(
+            # Parameter 5: max_consecutive_days
+            label_param_5 = ttk.Label(
                 master=self.frame_info_master,
-                text=text_weekend_days,
-                anchor="ne"
+                text="employees_view",
+                style="InfoParam.TLabel",
+                anchor="w"
             )
-
-            label_text_param_4_description = ttk.Label(
+            label_param_5_desc = ttk.Label(
                 master=self.frame_info_master,
-                text=text_weekend_days_description,
-                anchor="nw"
+                text="Consente di settare il nome degli header mostrati nella tabella degli impiegati.",
+                style="InfoDesc.TLabel",
+                justify="left",
+                anchor="w"
             )
 
             separator_bottom = ttk.Separator(
@@ -750,22 +764,42 @@ class ShiftManagerGui(tk.Tk):
             button_exit = ttk.Button(
                 master=self.frame_info_master,
                 text="Chiudi",
-                command=self.destroy
+                command=self.destroy,
+                width=15
             )
 
-            label_heading.grid(row=0, column=0, columnspan= 2, sticky="ew")
-            separator_top.grid(row=1, column=0, columnspan= 2, sticky="ew", pady=5, padx=50)
-            label_text_introduction.grid(row=2, column=0, columnspan=2, sticky="ew", pady=5, padx=50)
-            label_text_param_1.grid(row=3, column=0, sticky="nsew", pady=5, padx=50)
-            label_text_param_1_description.grid(row=3, column=1, sticky="nsew", pady=5, padx=50)
-            label_text_param_2.grid(row=4, column=0, sticky="nsew", pady=5, padx=50)
-            label_text_param_2_description.grid(row=4, column=1, sticky="nsew", pady=5, padx=50)
-            label_text_param_3.grid(row=5, column=0, sticky="nsew", pady=5, padx=50)
-            label_text_param_3_description.grid(row=5, column=1, sticky="nsew", pady=5, padx=50)
-            label_text_param_4.grid(row=6, column=0, sticky="nsew", pady=5, padx=50)
-            label_text_param_4_description.grid(row=6, column=1, sticky="nsew", pady=5, padx=50)
-            separator_bottom.grid(row=7, column=0, columnspan=2, sticky="ew", pady=5, padx=50)
-            button_exit.grid(row=8, column=0, columnspan=2, pady=10)
+            # Grid layout
+            row = 0
+            label_heading.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+            row += 1
+            separator_top.grid(row=row, column=0, columnspan=2, sticky="ew", pady=10)
+            row += 1
+            label_text_introduction.grid(row=row, column=0, columnspan=2, sticky="w", pady=(0, 15))
+            row += 1
+            
+            label_param_1.grid(row=row, column=0, sticky="nw", pady=5, padx=(0, 15))
+            label_param_1_desc.grid(row=row, column=1, sticky="w", pady=5)
+            row += 1
+            
+            label_param_2.grid(row=row, column=0, sticky="nw", pady=5, padx=(0, 15))
+            label_param_2_desc.grid(row=row, column=1, sticky="w", pady=5)
+            row += 1
+            
+            label_param_3.grid(row=row, column=0, sticky="nw", pady=5, padx=(0, 15))
+            label_param_3_desc.grid(row=row, column=1, sticky="w", pady=5)
+            row += 1
+            
+            label_param_4.grid(row=row, column=0, sticky="nw", pady=5, padx=(0, 15))
+            label_param_4_desc.grid(row=row, column=1, sticky="w", pady=5)
+            row += 1
+            
+            label_param_5.grid(row=row, column=0, sticky="nw", pady=5, padx=(0, 15))
+            label_param_5_desc.grid(row=row, column=1, sticky="w", pady=5)
+            row += 1
+            
+            separator_bottom.grid(row=row, column=0, columnspan=2, sticky="ew", pady=15)
+            row += 1
+            button_exit.grid(row=row, column=0, columnspan=2, pady=(0, 5))
 
     class AboutDialogWindow(tk.Toplevel):
         """Classe che consente di visualizare la finestra di about."""
@@ -993,9 +1027,9 @@ class ShiftManagerGui(tk.Tk):
         )
 
         submenu_other = tk.Menu(master=menu_bar, tearoff=False)
-        menu_bar.add_cascade(label="Altro", menu=submenu_other)
+        menu_bar.add_cascade(label="Info", menu=submenu_other)
 
-        submenu_other.add_command(label="Info", command=self._command_show_info)
+        submenu_other.add_command(label="Parametri", command=self._command_show_info)
         submenu_other.add_command(label="About", command=self._command_show_about)
 
 

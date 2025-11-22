@@ -152,3 +152,45 @@ These can be installed via pip:
 ```bash
 pip install openpyxl
 ```
+
+## 8. Version 2.2 Technical Changes
+
+### 8.1. Export Function Fix
+
+**Problem**: Export only showed headers and employee names after generation, no shift data.
+
+**Root Cause**:
+- `temp_employees_list` contains deep copies of Employee objects
+- Schedule references these deep-copied objects  
+- Exporter compared employees using object identity (`if employee in list`)
+- Comparison failed because deep copies are different object instances
+
+**Solution**:
+- **GUI.py**: `_command_export` now uses `temp_employees_list` when available (after generation), falls back to main list for saved schedules
+- **exporter.py**: Changed employee comparison from object identity to ID comparison:
+  ```python
+  # OLD: if employee in daily_shifts["mattina_rep"]:
+  # NEW:
+  employee_ids_in_mattina_rep = [emp.id for emp in daily_shifts["mattina_rep"]]
+  if employee.id in employee_ids_in_mattina_rep:
+  ```
+
+### 8.2. X (Off Duty) Persistence Fix
+
+**Problem**: Manually assigned "X" (off duty) disappeared after regeneration, while other manual shifts (M, P, R) persisted.
+
+**Root Cause**:
+- Manual shift assignments (M, P, R, etc.) were added to `locked_shifts`
+- "X" (off duty) was only added to `days_off`, NOT to `locked_shifts`
+- Generator respects `locked_shifts` but doesn't preserve `days_off` alone
+
+**Solution**:
+- **GUI.py**: `ScheduleTable._on_shift_selected` now adds `'off_duty'` to `locked_shifts` when "X" is selected:
+  ```python
+  if new_val == "X":
+      if date_obj not in employee.days_off:
+          employee.days_off.append(date_obj)
+          self._update_shift_count(employee, "off_duty", 1)
+      # IMPORTANT: Also add to locked_shifts so it persists
+      main_gui.locked_shifts[lock_key] = "off_duty"
+  ```
