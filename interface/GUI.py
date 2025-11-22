@@ -311,13 +311,19 @@ class ShiftManagerGui(tk.Tk):
                     current_date = datetime.date(year, month, day)
                     day_key_str_format = current_date.isoformat()
                     shift_text = ""  # Default to blank
-
-                    # Check se employee è off-duty
-                    if current_date in employee.days_off:
+                    
+                    # Get reference to main GUI to access locked_shifts
+                    main_gui = self.winfo_toplevel()
+                    lock_key = (day_key_str_format, employee.id)
+                    
+                    # FIRST check if there's a locked shift for this employee on this day
+                    if hasattr(main_gui, 'locked_shifts') and lock_key in main_gui.locked_shifts:
+                        locked_shift_type = main_gui.locked_shifts[lock_key]
+                        shift_text = self.SHIFTS_CORRISPONDANCE.get(locked_shift_type, "")
+                    # THEN check if employee is off-duty (from days_off list)
+                    elif current_date in employee.days_off:
                         shift_text = self.SHIFTS_CORRISPONDANCE["off_duty"]
-
-                    # Verifica in quale turno è inserito l'employee e inserisce la sigla del turno nell'array
-                    # row_values
+                    # FINALLY check the generated schedule
                     elif schedule_data and day_key_str_format in schedule_data:
                         daily_shifts = schedule_data[day_key_str_format]
                         # print(f"{day_key_str_format} - {daily_shifts.items()}")
@@ -900,6 +906,8 @@ class ShiftManagerGui(tk.Tk):
         self.locked_shifts = {} # Initialize locked shifts
         self.currently_displayed_schedule = None # Initialize currently displayed schedule
         self.SHIFTS_CORRISPONDANCE = self.configuration["shift_settings"]["shift_representation"]
+        self.current_displayed_year = None # Track which month is currently displayed
+        self.current_displayed_month = None # Track which month is currently displayed
 
         self._frame_setting()  # Creazione dei frame
 
@@ -1056,11 +1064,6 @@ class ShiftManagerGui(tk.Tk):
     def _command_schedule_view(self):
         """Event handler per il tasto 'Visualizza'"""
 
-        # Setta reset di self.generated_schedule per evitare di salvare un mese mentre se ne visualizza un altro
-        self.generated_schedule = None
-        self.temp_employees_list = None # Clear any temp list from previous unsaved generations
-        self.locked_shifts = {} # Reset manual locks when viewing a new schedule
-
         selected_year_str = self.box_year_selection.get()
         selected_month_str = self.box_month_selection.get()
 
@@ -1068,6 +1071,16 @@ class ShiftManagerGui(tk.Tk):
 
         # Conversione mese da formato str a int
         selected_month_int = MONTHS.index(selected_month_str)
+
+        # Setta reset di self.generated_schedule per evitare di salvare un mese mentre se ne visualizza un altro
+        self.generated_schedule = None
+        self.temp_employees_list = None # Clear any temp list from previous unsaved generations
+        
+        # Only clear locked_shifts if we're viewing a DIFFERENT month
+        # This preserves manual assignments when viewing the same month
+        if (self.current_displayed_year != selected_year_int or 
+            self.current_displayed_month != selected_month_int):
+            self.locked_shifts = {} # Reset manual locks when viewing a new schedule
 
         schedule_database = self.json_manager.load_shifts_file()
 
@@ -1093,6 +1106,10 @@ class ShiftManagerGui(tk.Tk):
             year=selected_year_int,
             month=selected_month_int
         )
+        
+        # Track the currently displayed month
+        self.current_displayed_year = selected_year_int
+        self.current_displayed_month = selected_month_int
 
     def _command_schedule_generate(self):
         """Generates a new schedule, asking for confirmation if one already exists."""
@@ -1193,6 +1210,10 @@ class ShiftManagerGui(tk.Tk):
             month=selected_month_int,
             employees_list=self.temp_employees_list
         )
+        
+        # Track the currently displayed month
+        self.current_displayed_year = selected_year_int
+        self.current_displayed_month = selected_month_int
 
         messagebox.showinfo("Turni Generati",
                             f"Nuova programmazione per {selected_month_str} "

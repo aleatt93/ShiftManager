@@ -6,10 +6,11 @@
         "serial_number": "A",
         "days_off": [],
         "shift_count": {
-            "mattina": 0,
-            "mattina_rep": 0,
-            "pomeriggio": 0,
-            "weekend_rep": 0
+            "mattina": 13,
+            "mattina_rep": 7,
+            "pomeriggio": 7,
+            "weekend_rep": 4,
+            "days_off": 0
         }
     },
     {
@@ -19,10 +20,11 @@
         "serial_number": "B",
         "days_off": [],
         "shift_count": {
-            "mattina": 0,
-            "mattina_rep": 0,
-            "pomeriggio": 0,
-            "weekend_rep": 0
+            "mattina": 14,
+            "mattina_rep": 7,
+            "pomeriggio": 6,
+            "weekend_rep": 3,
+            "days_off": 0
         }
     },
     {
@@ -32,10 +34,11 @@
         "serial_number": "C",
         "days_off": [],
         "shift_count": {
-            "mattina": 0,
-            "mattina_rep": 0,
-            "pomeriggio": 0,
-            "weekend_rep": 0
+            "mattina": 13,
+            "mattina_rep": 6,
+            "pomeriggio": 7,
+            "weekend_rep": 3,
+            "days_off": 0
         }
     }
 ]
