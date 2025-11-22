@@ -1349,7 +1349,10 @@ class ShiftManagerGui(tk.Tk):
         """Gestisce i comandi di esportazione (CSV, XLSX)."""
 
         # Verifica della presenza di una schedula da esportare
-        if not self.currently_displayed_schedule:
+        # Check for generated_schedule first (unsaved), then currently_displayed_schedule (viewed from file)
+        schedule_to_export = self.generated_schedule if self.generated_schedule else self.currently_displayed_schedule
+        
+        if not schedule_to_export:
             messagebox.showwarning(
                 title="Impossibile Esportare",
                 message="Programmazione non presente.\n"
@@ -1387,7 +1390,7 @@ class ShiftManagerGui(tk.Tk):
         # Creazione istanza Exporter e chiamata del metodo corretto
         try:
             exporter = Exporter(
-                schedule_data=self.currently_displayed_schedule,
+                schedule_data=schedule_to_export,
                 employees_list=self.employees_manager.export_employees_list(),
                 year=selected_year_int,
                 month=selected_month_int,
