@@ -1,8 +1,8 @@
 # Shift Manager - Technical Documentation
 
-**Version:** 1.0
+**Version:** 2.1
 **Author:** Attura Alessio
-**Date:** 10/08/2025
+**Last Updated:** November 2025
 
 ## 1. Overview
 
@@ -43,9 +43,9 @@ The backend is designed around the Single Responsibility Principle, where each c
 
 ### 3.1. `library.py` - The Engine
 
--   **`Employee` Class**: A simple data class that represents a single employee, holding their personal details, their list of off-duty days, and a dictionary of their accumulated shift counts.
+-   **`Employee` Class**: A simple data class that represents a single employee, holding their personal details, their list of off-duty days, and a dictionary of their accumulated shift counts. In v2.1, the `shift_count` dictionary now includes a `"days_off"` key to track off-duty days.
 -   **`EmployeesManager` Class**: Manages the collection of `Employee` objects in memory. It handles all business logic related to employees, such as adding a new employee, removing an employee, and calculating fair starting shift counts for new hires. It does not interact with files directly.
--   **`ShiftManager` Class**: The core scheduling engine. Its primary method, `shift_assignator`, implements the algorithm for generating a fair and balanced monthly schedule based on employee availability and historical shift counts. It now also accepts a `locked_shifts` parameter to respect manual assignments made by the user.
+-   **`ShiftManager` Class**: The core scheduling engine. Its primary method, `shift_assignator`, implements the algorithm for generating a fair and balanced monthly schedule based on employee availability and historical shift counts. It now also accepts a `locked_shifts` parameter to respect manual assignments made by the user, and an optional `employees_list` parameter to support temporary state management during generation.
 
 ### 3.2. `file_manager.py` - The Persistence Layer
 
@@ -76,28 +76,39 @@ The GUI is built using Python's standard `tkinter` library with the modern `ttk`
 
 The application follows a clear data flow pattern for all major operations.
 
-**Example: Generating a New Schedule**
+**Example: Generating a New Schedule (v2.1 with Temporary State)**
 
 1.  **User Action**: The user selects a year/month and clicks the "Genera Turni" button.
 2.  **GUI Event Handler**: The `_command_schedule_generate` method is called.
-3.  **Backend Call**: The handler calls `self.schedule_manager.shift_assignator()`.
-4.  **In-Memory State Change**: The `shift_assignator` method runs its algorithm and updates the `shift_count` attributes of the `Employee` objects held in `self.employees_manager.emp_list`. The new schedule is stored in `self.schedule_manager.shift_schedule`.
-5.  **GUI Update**: The handler retrieves the new schedule, converts it to a display-friendly format, and calls `self.schedule_table_manager.schedule_populate_table()` to refresh the view with the new data. The new schedule is also stored in `self.generated_schedule` to mark it as "unsaved."
-6.  **User Action**: The user clicks the "Salva" button.
-7.  **Persistence**: The `_command_schedule_save` handler calls `self.json_manager.save_shifts_file()` and `save_employees_file()`, passing the in-memory data. The `JsonManager` handles writing the updated state to the `.json` files on the disk.
+3.  **Temporary State Creation**: The handler creates a deep copy of the employee list (`self.temp_employees_list`) to avoid modifying the original list until save.
+4.  **Backend Call**: The handler calls `self.schedule_manager.shift_assignator()`, passing the temporary employee list and any `locked_shifts`.
+5.  **In-Memory State Change**: The `shift_assignator` method runs its algorithm and updates the `shift_count` attributes of the `Employee` objects in the **temporary list**. The new schedule is stored in `self.schedule_manager.shift_schedule`.
+6.  **GUI Update**: The handler retrieves the new schedule, converts it to a display-friendly format, and calls `self.schedule_table_manager.schedule_populate_table()` with the temporary employee list to refresh the view. The schedule is also stored in `self.generated_schedule` to mark it as "unsaved."
+7.  **User Action**: The user clicks the "Salva" button.
+8.  **Persistence**: The `_command_schedule_save` handler:
+    - Copies the `shift_count` and `days_off` from the temporary list to the main employee list
+    - Calls `self.json_manager.save_shifts_file()` and `save_employees_file()`, passing the updated data
+    - Clears `self.temp_employees_list`
+9.  **Disk Write**: The `JsonManager` handles writing the updated state to the `.json` files on the disk.
 
-**Example: Manual Shift Assignment**
+**Example: Manual Shift Assignment (v2.1 with Persistence)**
 
 1.  **User Action**: User clicks a cell in the schedule table.
 2.  **GUI Event**: `ScheduleTable._on_click` is triggered, displaying a `ttk.Combobox`.
 3.  **User Action**: User selects a shift (e.g., "M") or "X" (Off Duty).
 4.  **GUI Event**: `ScheduleTable._on_shift_selected` is triggered.
 5.  **State Update**:
-    -   If "X" is selected, the date is added to `Employee.days_off`.
-    -   If a shift is selected, it is added to `ShiftManagerGui.locked_shifts`.
-    -   `Employee.shift_count` is updated immediately.
+    -   If "X" is selected:
+        - The date is added to `Employee.days_off`
+        - `Employee.shift_count["days_off"]` is incremented
+    -   If a shift is selected, it is added to `ShiftManagerGui.locked_shifts` with key `(date_iso, employee_id)`
+    -   `Employee.shift_count` is updated immediately for the temporary list
 6.  **GUI Update**: The table cell is updated with the new value.
-7.  **Subsequent Generation**: When `_command_schedule_generate` is called next, it passes `locked_shifts` to `shift_assignator`, ensuring these manual choices are preserved.
+7.  **Subsequent Generation**: When `_command_schedule_generate` is called next:
+    - `locked_shifts` is passed to `shift_assignator`
+    - The schedule is regenerated respecting manual assignments
+    - `schedule_populate_table` checks `locked_shifts` FIRST before displaying generated shifts, ensuring manual assignments are visible
+8.  **Persistence**: Manual assignments are only saved to disk when the user clicks "Salva".
 
 ## 6. Configuration (`config.json`)
 
@@ -109,8 +120,48 @@ The application is configured via the `config.json` file, which allows for custo
     -   `shift_representation`: Maps internal shift names to the short codes displayed in the GUI and exports.
     -   `n_of_employees`: Defines the number of employees required for special shifts.
     -   `weekend_days`: Defines which days of the week are considered weekends.
+-   **`employees_view`** (v2.1): Defines the column headers for the employee table, including the new "Ferie" (Days Off) column.
 
-## 7. Dependencies
+## 7. Version 2.1 Technical Changes
+
+### 7.1. Shift Counter Decoupling
+
+**Problem**: In v2.0, shift counters were updated immediately upon generation, making it impossible to regenerate without artificially inflating counters.
+
+**Solution**: Implemented a temporary state pattern:
+- `_command_schedule_generate` creates a deep copy of the employee list (`self.temp_employees_list`)
+- All counter updates during generation affect only the temporary list
+- `_command_schedule_save` copies counters from temporary to main list
+- Tables can display data from either list depending on context
+
+### 7.2. Manual Shift Persistence
+
+**Problem**: Manual shift assignments were being lost visually after regeneration.
+
+**Solution**: Implemented a multi-layered fix:
+- Added `current_displayed_year` and `current_displayed_month` tracking
+- `locked_shifts` only cleared when viewing a DIFFERENT month
+- `schedule_populate_table` checks `locked_shifts` FIRST before generated schedule
+- This gives manual assignments display priority
+
+### 7.3. Off Duty Counter Tracking
+
+**Problem**: No way to track how many days off each employee had taken.
+
+**Solution**:
+- Added `"days_off"` key to `Employee.shift_count` dictionary
+- Modified `_on_shift_selected` to increment/decrement this counter when "X" is set/unset
+- Added "Ferie" column to employee table
+- Counter persists through save/load cycle
+
+### 7.4. Bug Fixes
+
+- Fixed `AttributeError` for `current_year`, `current_month` not being initialized
+- Fixed `AttributeError` for `currently_displayed_schedule` not being initialized
+- Fixed `AttributeError` for `SHIFTS_CORRISPONDANCE` not being initialized
+- Fixed `NameError` in `ScheduleTable` due to misplaced code
+
+## 8. Dependencies
 
 To run this application from the source code, the following external libraries are required:
 
