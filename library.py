@@ -24,7 +24,8 @@ class Employee:
             "mattina": 0,
             "mattina_rep": 0,
             "pomeriggio": 0,
-            "weekend_rep": 0
+            "weekend_rep": 0,
+            "days_off": 0
         }
 
 
@@ -242,14 +243,6 @@ class EmployeesManager:
 
     def export_employees_list(self):
         """Esporta la lista impiegati"""
-        # DEBUG
-        # print("<" * 10 + "\n" + "EXPORTED" + "\n" + "-" * 10)
-        # for emp in self.emp_list:
-        #     print(emp.surname, emp.name)
-        #     print(f"Days off: {emp.days_off}")
-        #     print(f"Shift_count: {emp.shift_count}")
-        #     print("-" * 10)
-        # print(">" * 10)
         return self.emp_list
 
 
@@ -270,17 +263,9 @@ class ShiftManager:
         num_on_pomeriggio = total_employees - num_on_mattina
         num_on_weekend_rep = config_dict["shift_settings"]["n_of_employees"]["weekend_rep"]
 
-        # # For DEBUG
-        # print(
-        #     f"n_employees_on_mattina    : {num_on_mattina}\n"
-        #     f"n_employees_on_mattina_rep: {num_on_mattina_rep}\n"
-        #     f"n_employees_on_pomeriggio : {num_on_pomeriggio}\n"
-        #     f"employees_on_weekend      : {num_on_weekend_rep}"
-        # )
-
         return num_on_mattina, num_on_mattina_rep, num_on_pomeriggio, num_on_weekend_rep
 
-    def shift_assignator(self, year, month, config_dict, locked_shifts=None):
+    def shift_assignator(self, year, month, config_dict, locked_shifts=None, employees_list=None):
         """Assegna i turni ai dipendenti, durante la SETTIMANA, in base al mese e anno selezionati.
         Inserisce nel dictionary vuoto del shift_assignment_for_month_to_fill vuoto gli array dei dipendenti..
 
@@ -291,11 +276,14 @@ class ShiftManager:
         if locked_shifts is None:
             locked_shifts = {}
 
+        # Use the provided list if available, otherwise use the instance's list
+        current_emp_list = employees_list if employees_list is not None else self.emp_list
+
         # Dictionary vuoto contenente il calendario e i turni possibili. Devono essere inseriti i turni
         shift_assignment_for_month = monthly_calendar_generator(year, month)
 
         # Se non sono presenti almeno due impiegati nella lista impedisce di generare i turni
-        if len(self.emp_list) < 2:
+        if len(current_emp_list) < 2:
             print("Non sono presenti abbastanza impiegati per la generazione dei turni.\n"
                   "Inserire ulteriori impiegati.")
             return False
@@ -305,7 +293,7 @@ class ShiftManager:
             # print(f"\nAssigning shift for date {day_date}") # DEBUG
 
             # Copia della lista dei dipendenti per lavorare giorno per giorno
-            employees_available_for_today = [emp for emp in self.emp_list if day_date not in emp.days_off]
+            employees_available_for_today = [emp for emp in current_emp_list if day_date not in emp.days_off]
 
             # Calcolo split impiegati
             (
@@ -329,7 +317,7 @@ class ShiftManager:
             
             for emp_id, shift_type in locks_today:
                 # Trova l'oggetto employee
-                emp_obj = next((e for e in self.emp_list if e.id == emp_id), None)
+                emp_obj = next((e for e in current_emp_list if e.id == emp_id), None)
                 if emp_obj:
                     if shift_type in shift_assignment_for_month[day_date]:
                          shift_assignment_for_month[day_date][shift_type].append(emp_obj)

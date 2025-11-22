@@ -7,8 +7,9 @@ import datetime
 import library
 import file_manager
 from exporter import Exporter
+import copy
 
-FILE_VERSION = "1.0"
+FILE_VERSION = "2.1"
 
 WEEKDAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"]
 MONTHS = [0, "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto",
@@ -166,6 +167,7 @@ class ShiftManagerGui(tk.Tk):
             # Se era OFF DUTY
             if date_obj in employee.days_off:
                 employee.days_off.remove(date_obj)
+                self._update_shift_count(employee, "off_duty", -1)
             
             # Se era LOCKED SHIFT (o turno generato, ma qui gestiamo manual overrides)
             # Se c'è un lock precedente, decrementiamo il contatore
@@ -220,6 +222,7 @@ class ShiftManagerGui(tk.Tk):
             if new_val == "X":
                 if date_obj not in employee.days_off:
                     employee.days_off.append(date_obj)
+                    self._update_shift_count(employee, "off_duty", 1)
             elif new_val in shift_map:
                 shift_type = shift_map[new_val]
                 main_gui.locked_shifts[lock_key] = shift_type
@@ -237,7 +240,9 @@ class ShiftManagerGui(tk.Tk):
             if shift_type in employee.shift_count:
                 employee.shift_count[shift_type] += delta
             elif shift_type == "off_duty":
-                pass # Non c'è contatore per off_duty
+                # Update days_off counter
+                if "days_off" in employee.shift_count:
+                    employee.shift_count["days_off"] += delta
 
         def _scrollbar_setting(self):
             """Genera e setta le scrollbar verticale e orizzontale della tabella shift schedule"""
@@ -264,13 +269,9 @@ class ShiftManagerGui(tk.Tk):
             self.schedule_table.delete(*self.schedule_table.get_children())
             self.schedule_table["columns"] = ()
 
-        def schedule_populate_table(self, schedule_data, year: int, month: int):
-            """Clears the table and fills it with the schedule for a given month.
-            :param schedule_data: The dictionary of shifts for the month (from shift_storage.json).
-            :param year: anno di riferimento per la creazione della tabella
-            :param month: mese di riferimento per la creazione della tabella"""
-
-            self.clear()  # Cancella tutto per poi inserire i dati
+        def schedule_populate_table(self, schedule_data, year: int, month: int, employees_list=None):
+            """Populates the table with the schedule data."""
+            self.clear()
             
             # Salva anno e mese correnti per gestione click
             self.current_year = year
@@ -297,7 +298,14 @@ class ShiftManagerGui(tk.Tk):
                 self.schedule_table.heading(col_id, text=f"{day_name} {day}", anchor="n")
                 self.schedule_table.column(col_id, width=60, anchor="center", stretch=False)
 
-            for employee in self.emp_list:
+            # Use provided list or default to self.emp_list
+            current_emp_list = employees_list if employees_list is not None else self.emp_list
+            
+            # Update self.emp_list to ensure _on_click uses the correct list (e.g. temp list)
+            if employees_list is not None:
+                self.emp_list = employees_list
+
+            for employee in current_emp_list:
                 row_values = [employee.serial_number, employee.surname, employee.name]
                 for day in range(1, number_of_days + 1):
                     current_date = datetime.date(year, month, day)
@@ -335,6 +343,7 @@ class ShiftManagerGui(tk.Tk):
 
             self.emp_list = employees_list
             self.configuration = configuration
+            self.EMPLOYEE_TABLE_HEADINGS = self.configuration["employees_view"]
 
             # Creazione oggetto Treeview
             self.employees_table = ttk.Treeview(self, show="headings")
@@ -375,19 +384,21 @@ class ShiftManagerGui(tk.Tk):
                 "mattina",
                 "mattina_rep",
                 "pomeriggio",
-                "weekend_rep"
+                "weekend_rep",
+                "off_duty"
             )
 
             self.employees_table["columns"] = employees_table_columns_headers
 
             # Setting nome heading
-            self.employees_table.heading("serial_number", text="Matricola")
-            self.employees_table.heading("surname", text="Cognome")
-            self.employees_table.heading("name", text="Nome")
-            self.employees_table.heading("mattina", text="Mattina")
-            self.employees_table.heading("mattina_rep", text="Mattina REP")
-            self.employees_table.heading("pomeriggio", text="Pomeriggio")
-            self.employees_table.heading("weekend_rep", text="Weekend REP")
+            self.employees_table.heading("serial_number", text=self.EMPLOYEE_TABLE_HEADINGS["matricola"])
+            self.employees_table.heading("surname", text=self.EMPLOYEE_TABLE_HEADINGS["cognome"])
+            self.employees_table.heading("name", text=self.EMPLOYEE_TABLE_HEADINGS["nome"])
+            self.employees_table.heading("mattina", text=self.EMPLOYEE_TABLE_HEADINGS["mattina"])
+            self.employees_table.heading("mattina_rep", text=self.EMPLOYEE_TABLE_HEADINGS["mattina_rep"])
+            self.employees_table.heading("pomeriggio", text=self.EMPLOYEE_TABLE_HEADINGS["pomeriggio"])
+            self.employees_table.heading("weekend_rep", text=self.EMPLOYEE_TABLE_HEADINGS["weekend_rep"])
+            self.employees_table.heading("off_duty", text=self.EMPLOYEE_TABLE_HEADINGS["off_duty"])
 
             # Setting caratteristiche heading
             self.employees_table.column("serial_number", width=100, anchor="center", stretch=False)
@@ -397,16 +408,20 @@ class ShiftManagerGui(tk.Tk):
             self.employees_table.column("mattina_rep", width=100, anchor="center", stretch=False)
             self.employees_table.column("pomeriggio", width=100, anchor="center", stretch=False)
             self.employees_table.column("weekend_rep", width=100, anchor="center", stretch=False)
+            self.employees_table.column("off_duty", width=100, anchor="center", stretch=False)
 
-        def employees_populate_table(self):
+        def employees_populate_table(self, employees_list=None):
             """Clears and fills the table with the current employee list."""
             self.clear()  # Cancella tutto per poi inserire i dati
 
             self._columns_setting()  # Settaggio colonne
 
+            # Use provided list or default to self.emp_list
+            current_emp_list = employees_list if employees_list is not None else self.emp_list
+
             # Genera valori da inserire nella riga di ciascun employee
             row_values = []
-            for employee in self.emp_list:
+            for employee in current_emp_list:
                 row_values = [
                     employee.serial_number,
                     employee.surname,
@@ -414,7 +429,8 @@ class ShiftManagerGui(tk.Tk):
                     employee.shift_count["mattina"],
                     employee.shift_count["mattina_rep"],
                     employee.shift_count["pomeriggio"],
-                    employee.shift_count["weekend_rep"]
+                    employee.shift_count["weekend_rep"],
+                    employee.shift_count["days_off"]
                 ]
 
                 # Inserimento dei dati nella tabella
@@ -872,20 +888,18 @@ class ShiftManagerGui(tk.Tk):
         self.schedule_manager = schedule_manager
         self.json_manager = json_manager
         self.configuration = config_json_file
-
-        self.SHIFTS_CORRISPONDANCE = self.configuration["shift_settings"]["shift_representation"]
-        self.current_year = datetime.date.today().year
-        self.current_month = datetime.date.today().month
-        self.generated_schedule = None  # Store generated schedule
-        self.currently_displayed_schedule = None  # Store viewed schedule on shift_table
-        self.locked_shifts = {} # Stores manual assignments {(date_iso, emp_id): shift_type}
-
-        self._root_settings()
-
-    def _root_settings(self):
-        """Setta le proprietà fondamentali della UI"""
         self.title("Shift Manager")
         self.state("zoomed") # Full Screen
+
+        # Initialize current date
+        today = datetime.date.today()
+        self.current_year = today.year
+        self.current_month = today.month
+
+        self.temp_employees_list = None # Initialize temp list
+        self.locked_shifts = {} # Initialize locked shifts
+        self.currently_displayed_schedule = None # Initialize currently displayed schedule
+        self.SHIFTS_CORRISPONDANCE = self.configuration["shift_settings"]["shift_representation"]
 
         self._frame_setting()  # Creazione dei frame
 
@@ -1044,6 +1058,7 @@ class ShiftManagerGui(tk.Tk):
 
         # Setta reset di self.generated_schedule per evitare di salvare un mese mentre se ne visualizza un altro
         self.generated_schedule = None
+        self.temp_employees_list = None # Clear any temp list from previous unsaved generations
         self.locked_shifts = {} # Reset manual locks when viewing a new schedule
 
         selected_year_str = self.box_year_selection.get()
@@ -1142,11 +1157,16 @@ class ShiftManagerGui(tk.Tk):
         # 2. Incrementare i contatori per i locked shifts.
         # 3. Assegnare il resto.
         
+        # Create a temporary copy of the employee list for this generation session
+        # This prevents the main list from being updated until the user explicitly saves
+        self.temp_employees_list = copy.deepcopy(self.employees_manager.emp_list)
+
         is_generated = self.schedule_manager.shift_assignator(
             selected_year_int,
             selected_month_int,
             self.configuration,
-            locked_shifts=self.locked_shifts
+            locked_shifts=self.locked_shifts,
+            employees_list=self.temp_employees_list
         )
 
         if not is_generated:
@@ -1156,6 +1176,7 @@ class ShiftManagerGui(tk.Tk):
                         "Aggiungere dipendenti prima di procedere.",
                 parent=self
             )
+            self.temp_employees_list = None # Clear temp list on failure
             return None
 
         # Storage dei turni appena generati
@@ -1169,7 +1190,8 @@ class ShiftManagerGui(tk.Tk):
         self.schedule_table_manager.schedule_populate_table(
             schedule_data=generated_schedule_display_format,
             year=selected_year_int,
-            month=selected_month_int
+            month=selected_month_int,
+            employees_list=self.temp_employees_list
         )
 
         messagebox.showinfo("Turni Generati",
@@ -1187,7 +1209,26 @@ class ShiftManagerGui(tk.Tk):
             return
         else:
             self.json_manager.save_shifts_file(self.generated_schedule)
-            self.json_manager.save_employees_file(self.employees_manager.export_employees_list())
+            
+            # If we have a temporary employee list (from a generation), update the main list
+            if self.temp_employees_list:
+                # Update shift counts in the main list based on the temp list
+                # We assume the order and IDs match since temp is a deepcopy of main
+                # But to be safe, we can match by ID
+                for temp_emp in self.temp_employees_list:
+                    main_emp = next((e for e in self.employees_manager.emp_list if e.id == temp_emp.id), None)
+                    if main_emp:
+                        main_emp.shift_count = temp_emp.shift_count
+                        main_emp.days_off = temp_emp.days_off
+                
+                # Now save the updated main list
+                self.json_manager.save_employees_file(self.employees_manager.export_employees_list())
+                
+                # Clear the temp list as changes are now committed
+                self.temp_employees_list = None
+            else:
+                # Fallback if no temp list (shouldn't happen if generated, but safe to keep)
+                self.json_manager.save_employees_file(self.employees_manager.export_employees_list())
 
         messagebox.showinfo(
             title="Salvataggio Eseguito",
@@ -1373,7 +1414,8 @@ class ShiftManagerGui(tk.Tk):
             self.frame_view_shifts.tkraise()
         elif view == "employees":
             if hasattr(self, "employees_table_manager"):
-                self.employees_table_manager.employees_populate_table()
+                # If we have a temp list (unsaved generation), show that to reflect updated counters
+                self.employees_table_manager.employees_populate_table(employees_list=self.temp_employees_list)
             self.frame_view_employees.tkraise()
 
     def _build_view_shifts(self, frame):

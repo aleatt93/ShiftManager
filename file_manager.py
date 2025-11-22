@@ -64,13 +64,23 @@ class JsonManager:
                     "mattina_rep": "M+R",
                     "pomeriggio": "P",
                     "weekend_rep": "R",
-                    "off_duty": "O"
+                    "off_duty": "X"
                 },
                 "n_of_employees":{
                     "mattina_rep": 1,
                     "weekend_rep": 1
                 },
                 "weekend_days": [5, 6]
+            },
+            "employees_view": {
+                "matricola": "Matricola",
+                "cognome": "Cognome",
+                "nome": "Nome",
+                "mattina": "Mattina",
+                "mattina_rep": "Mattina REP",
+                "pomeriggio": "Pomeriggio",
+                "weekend_rep": "Weekend REP",
+                "off_duty": "Ferie"
             }
         }
 

@@ -1,1 +1,41 @@
-[]
+[
+    {
+        "id": 1,
+        "surname": "A",
+        "name": "A",
+        "serial_number": "A",
+        "days_off": [],
+        "shift_count": {
+            "mattina": 0,
+            "mattina_rep": 0,
+            "pomeriggio": 0,
+            "weekend_rep": 0
+        }
+    },
+    {
+        "id": 2,
+        "surname": "B",
+        "name": "B",
+        "serial_number": "B",
+        "days_off": [],
+        "shift_count": {
+            "mattina": 0,
+            "mattina_rep": 0,
+            "pomeriggio": 0,
+            "weekend_rep": 0
+        }
+    },
+    {
+        "id": 3,
+        "surname": "C",
+        "name": "C",
+        "serial_number": "C",
+        "days_off": [],
+        "shift_count": {
+            "mattina": 0,
+            "mattina_rep": 0,
+            "pomeriggio": 0,
+            "weekend_rep": 0
+        }
+    }
+]
