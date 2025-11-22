@@ -1,6 +1,6 @@
 # Shift Manager - Technical Documentation
 
-**Version:** 2.1
+**Version:** 2.2
 **Author:** Attura Alessio
 **Last Updated:** November 2025
 
@@ -147,26 +147,6 @@ The application is configured via the `config.json` file, which allows for custo
 ### 7.3. Off Duty Counter Tracking
 
 **Problem**: No way to track how many days off each employee had taken.
-
-**Solution**:
-- Added `"days_off"` key to `Employee.shift_count` dictionary
-- Modified `_on_shift_selected` to increment/decrement this counter when "X" is set/unset
-- Added "Ferie" column to employee table
-- Counter persists through save/load cycle
-
-### 7.4. Bug Fixes
-
-- Fixed `AttributeError` for `current_year`, `current_month` not being initialized
-- Fixed `AttributeError` for `currently_displayed_schedule` not being initialized
-- Fixed `AttributeError` for `SHIFTS_CORRISPONDANCE` not being initialized
-- Fixed `NameError` in `ScheduleTable` due to misplaced code
-
-## 8. Dependencies
-
-To run this application from the source code, the following external libraries are required:
-
--   `openpyxl`: For exporting to Excel (.xlsx) format.
--   `reportlab`: (If PDF export is re-implemented).
 
 These can be installed via pip:
 ```bash

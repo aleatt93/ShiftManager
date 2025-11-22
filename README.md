@@ -1,4 +1,4 @@
-# Shift Manager v2.1
+# Shift Manager v2.2
 
 Shift Manager is a user-friendly desktop application designed to simplify and automate the process of creating and managing monthly employee shift schedules. It provides a clean graphical interface to handle employee data, generate fair and balanced schedules, and export them to common formats.
 
@@ -93,7 +93,20 @@ You can manually assign shifts or set employees as "Off Duty" before or after ge
 
 ## Version History
 
-### v2.1 (Current)
+### v2.2 (Current)
+
+**Critical Bug Fixes:**
+- Fixed export function to work with generated schedules (no longer requires viewing first)
+- Fixed "X" (off duty) manual assignments disappearing after regeneration
+- Export now correctly shows shift data immediately after generation
+
+**Technical Improvements:**
+- Export function now uses `temp_employees_list` when available
+- Exporter compares employees by ID instead of object identity
+- "X" (off duty) now added to `locked_shifts` for persistence
+- Resolved deep copy object identity comparison issues
+
+### v2.1
 
 **Critical Bug Fixes:**
 - Fixed manual shift assignments being lost visually after regenerating schedules
@@ -112,7 +125,7 @@ You can manually assign shifts or set employees as "Off Duty" before or after ge
 - Added month tracking to prevent clearing manual assignments unnecessarily
 
 **Known Issues:**
-- Export function has minor bugs (to be fixed in v2.2)
+- None currently reported
 
 ### v2.0
 - Initial release with core scheduling functionality

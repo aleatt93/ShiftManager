@@ -9,7 +9,7 @@ import file_manager
 from exporter import Exporter
 import copy
 
-FILE_VERSION = "2.1"
+FILE_VERSION = "2.2"
 
 WEEKDAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"]
 MONTHS = [0, "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto",
